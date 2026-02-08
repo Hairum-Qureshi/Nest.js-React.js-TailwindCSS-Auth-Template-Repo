@@ -222,20 +222,6 @@ This can be:
 
 Once `MONGO_URI` is defined, the backend should start normally.
 
----
-
-### Why MongoDB Is Included
-
-Even though this template does **not** define schemas or models, MongoDB wiring is included so you can immediately:
-
-* Persist users
-* Store auth-related data
-* Extend into real application logic
-
-If you don’t want MongoDB, you’re free to remove it — nothing else depends on it.
-
----
-
 ## Backend Environment Variables
 
 Create a `.env` file in `apps/backend`:
