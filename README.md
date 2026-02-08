@@ -153,6 +153,7 @@ PORT=3000
 MONGO_URI=mongodb_connection_string
 NODE_ENV=development
 FIREBASE_SERVICE_ACCOUNT='{ ... }'
+FRONTEND_URL=your_frontend_url
 ```
 
 ### Important notes
