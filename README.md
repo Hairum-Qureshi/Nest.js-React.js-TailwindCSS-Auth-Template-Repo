@@ -1,15 +1,46 @@
-**NestJS + React + Vite + Tailwind + Turbo Template**
+# NestJS + React + Vite + Tailwind + Turbo (with Google Auth)
 
 This repository is a **full-stack monorepo template** using **npm workspaces** and **Turborepo** to manage a React frontend and a NestJS backend in a single repository.
 
-The goal of this template is to provide:
-
-- A minimal but correct monorepo setup
-- Clear separation of frontend and backend concerns
-- Centralized dependency management
-- Coordinated development scripts without over-engineering
+It is based on a minimal monorepo foundation, with **Google authentication pre-wired using Firebase** so you don’t have to build auth plumbing from scratch.
 
 This is a **template**, not a production-ready system.
+
+---
+
+## What This Template Is
+
+This template provides:
+
+* A correct, minimal **monorepo setup**
+* Clear separation of frontend and backend concerns
+* Centralized dependency management
+* Coordinated development scripts
+* **Working Google OAuth (Firebase) across frontend and backend**
+
+Authentication is included, but only to the extent required to:
+
+* Sign users in with Google on the frontend
+* Verify and trust those users on the backend
+
+Everything else remains intentionally unopinionated.
+
+---
+
+## What This Template Is *Not*
+
+This template does **not** try to be a full application starter.
+
+It does **not** include:
+
+* User roles or permissions
+* Auth-based authorization rules
+* Session persistence strategies
+* Database schemas or migrations
+* API clients or shared domain models
+* Deployment, Docker, or CI/CD
+
+Those decisions are left to the user.
 
 ---
 
@@ -18,8 +49,8 @@ This is a **template**, not a production-ready system.
 ```
 .
 ├── apps/
-│   ├── backend/          # NestJS backend application
-│   └── frontend/         # React + Vite + Tailwind frontend
+│   ├── backend/          # NestJS backend (Firebase Admin + JWT + Mongo)
+│   └── frontend/         # React + Vite + Tailwind (Firebase client)
 ├── packages/             # Optional shared packages (empty by default)
 ├── package.json          # Root workspace + Turbo configuration
 ├── package-lock.json     # Single lockfile for the entire monorepo
@@ -29,11 +60,11 @@ This is a **template**, not a production-ready system.
 
 ### Key Structural Notes
 
-- This **is a monorepo**
-- Dependency management is centralized at the **root**
-- Each app remains a **standalone project**
-- No code is shared by default
-- Shared packages are optional, not assumed
+* This **is a monorepo**
+* Dependency management is centralized at the **root**
+* Each app remains a **standalone project**
+* No shared code is assumed
+* Shared packages are optional and explicit
 
 ---
 
@@ -41,21 +72,24 @@ This is a **template**, not a production-ready system.
 
 ### Backend (`apps/backend`)
 
-- NestJS
-- TypeScript
-- Basic “Hello World” API
+* NestJS
+* TypeScript
+* Firebase Admin SDK
+* JWT-based session tokens
+* MongoDB (wired, no schemas assumed)
 
 ### Frontend (`apps/frontend`)
 
-- React
-- Vite
-- TailwindCSS
-- TypeScript
+* React
+* Vite
+* TailwindCSS
+* TypeScript
+* Firebase Client SDK (Google sign-in)
 
 ### Tooling
 
-- npm workspaces (monorepo management)
-- Turborepo (task orchestration and caching)
+* npm workspaces
+* Turborepo
 
 ---
 
@@ -63,8 +97,8 @@ This is a **template**, not a production-ready system.
 
 You need:
 
-- Node.js (LTS recommended)
-- npm (v7+ required for workspaces)
+* Node.js (LTS recommended)
+* npm (v7+ for workspaces)
 
 ---
 
@@ -90,28 +124,33 @@ Run all development servers concurrently:
 npm run dev
 ```
 
-This command:
+This uses Turbo to:
 
-- Uses Turbo to run the `dev` script in each app
-- Starts the NestJS backend
-- Starts the Vite frontend
-- Streams logs with app prefixes
+* Start the NestJS backend
+* Start the Vite frontend
+* Stream logs with app prefixes
 
 ### Default Ports
 
-- Backend: `http://localhost:3000`
-- Frontend: `http://localhost:5173`
+* Backend: `http://localhost:3000`
+* Frontend: `http://localhost:5173`
+
+---
 
 ## Environment Variables & Firebase Setup
 
-This template **requires several environment variables** to be defined for both the backend and frontend.
-If any required variable is missing or malformed, the app **will fail at startup**.
+This template **will not start** unless required environment variables are present and valid.
+
+Both frontend and backend rely on Firebase, but for **different purposes**:
+
+* Frontend → Firebase **client SDK**
+* Backend → Firebase **Admin SDK**
 
 ---
 
 ## Common Startup Error (Firebase Admin)
 
-If you see an error like this when starting the backend:
+If the backend crashes with:
 
 ```
 SyntaxError: "undefined" is not valid JSON
@@ -119,65 +158,121 @@ SyntaxError: "undefined" is not valid JSON
     at firebase.module.ts
 ```
 
-### What this means
+### What’s happening
 
-This error happens because **Firebase Admin expects a service account JSON**, but the environment variable that should contain it is either:
-
-* Missing
-* Named incorrectly
-* Not wrapped in quotes
-* Not valid JSON
-
-Internally, the backend does something like:
+The backend expects a Firebase **service account JSON** via:
 
 ```ts
 JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
 ```
 
-If `FIREBASE_SERVICE_ACCOUNT` is `undefined`, `JSON.parse` crashes immediately — which is why the error mentions `"undefined"` instead of Firebase directly.
+If the variable is missing, misnamed, or malformed, the process crashes immediately.
+
+---
 
 ### Fix
 
-You **must provide a valid Firebase service account JSON** via the `FIREBASE_SERVICE_ACCOUNT` environment variable, wrapped in quotes.
+You **must** provide a valid Firebase service account JSON via the
+`FIREBASE_SERVICE_ACCOUNT` environment variable, wrapped in **single quotes**.
+
+---
+
+## Another Common Startup Error (MongoDB)
+
+You may also see an error similar to:
+
+```
+MongoParseError: URI must be provided
+```
+
+or:
+
+```
+MongooseError: The `uri` parameter to `openUri()` must be a string
+```
+
+### What this means
+
+This error simply means that **no MongoDB connection string was provided**.
+
+The backend expects a MongoDB URI via the `MONGO_URI` environment variable.
+If it’s missing, empty, or misspelled, Nest will fail during startup.
+
+This error is **not related to Firebase or Google Auth**.
+
+---
+
+### Fix
+
+Make sure your backend `.env` file includes:
+
+```env
+MONGO_URI=mongodb_connection_string
+```
+
+This can be:
+
+* A local MongoDB instance
+
+  ```
+  mongodb://localhost:27017/your-db-name
+  ```
+
+* Or a hosted provider (e.g. MongoDB Atlas)
+
+Once `MONGO_URI` is defined, the backend should start normally.
+
+---
+
+### Why MongoDB Is Included
+
+Even though this template does **not** define schemas or models, MongoDB wiring is included so you can immediately:
+
+* Persist users
+* Store auth-related data
+* Extend into real application logic
+
+If you don’t want MongoDB, you’re free to remove it — nothing else depends on it.
 
 ---
 
 ## Backend Environment Variables
 
-Create a `.env` file in `apps/backend` and ensure **all** of the following exist:
+Create a `.env` file in `apps/backend`:
 
 ```env
 JWT_SECRET=your_jwt_secret_here
-JWT_EXPIRES=xxx
+JWT_EXPIRES=604800000
 PORT=3000
-MONGO_URI=mongodb_connection_string
 NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+MONGO_URI=mongodb_connection_string
 FIREBASE_SERVICE_ACCOUNT='{ ... }'
-FRONTEND_URL=your_frontend_url
 ```
 
-### Important notes
+### Important Notes
 
-* `JWT_EXPIRES` **must be an integer**, not a string
-  Example: `604800000` (7 days in milliseconds)
-* `NODE_ENV` **must** be set to `development` for local dev
-* `FIREBASE_SERVICE_ACCOUNT` **must**:
+* `JWT_EXPIRES` must be a **number**, not a string
+* `NODE_ENV` must be `development` for local dev
+* `FIREBASE_SERVICE_ACCOUNT` must:
 
   * Be valid JSON
   * Be wrapped in **single quotes**
-  * Contain the **entire service account object** from Firebase
+  * Contain the **entire service account object**
 
-Example (shortened):
+Example (truncated):
 
 ```env
 FIREBASE_SERVICE_ACCOUNT='{
   "type": "service_account",
   "project_id": "your-project-id",
-  "private_key_id": "abc123",
   "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
   "client_email": "firebase-adminsdk@your-project-id.iam.gserviceaccount.com"
 }'
 ```
+
+⚠️ **Never commit this value.**
+It grants full admin access to your Firebase project.
 
 ---
 
@@ -193,7 +288,6 @@ VITE_FIREBASE_PROJECT_ID=your_project_id
 VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
-VITE_BACKEND_BASE_URL=your_backend_url
 ```
 
 These values come from your **Firebase Web App configuration**, not the service account.
@@ -202,102 +296,58 @@ These values come from your **Firebase Web App configuration**, not the service 
 
 ## Firebase Project Setup (Required)
 
-This template **will not work** unless Firebase is configured correctly.
-
 ### 1. Create a Firebase Project
 
-1. Go to the Firebase Console
-2. Click **Add project**
-3. Follow the setup steps (Analytics optional)
+* Firebase Console → Add project
 
----
+### 2. Enable Google Authentication
 
-### 2. Enable Authentication
+* Authentication → Sign-in method → Enable **Google**
 
-1. In Firebase Console → **Authentication**
-2. Click **Get started**
-3. Go to the **Sign-in method** tab
-4. Enable **Google**
-5. Save changes
+### 3. Create a Firebase Web App
 
-This is required for Google OAuth to work.
-
----
-
-### 3. Create a Firebase Web App (Frontend)
-
-1. Firebase Console → Project Settings
-2. Scroll to **Your apps**
-3. Click the **Web (`</>`)** icon
-4. Register the app
-5. Copy the config values into your frontend `.env`
-
----
+* Project Settings → Web app
+* Copy config into frontend `.env`
 
 ### 4. Generate a Service Account (Backend)
 
-1. Firebase Console → **Project Settings**
-2. Go to **Service accounts**
-3. Click **Generate new private key**
-4. Download the JSON file
-5. Copy **the entire JSON object**
-6. Paste it into `FIREBASE_SERVICE_ACCOUNT` in your backend `.env`
-7. Wrap it in **single quotes**
-
-⚠️ **Never commit this file or value to GitHub.**
-It grants full admin access to your Firebase project.
+* Project Settings → Service accounts
+* Generate new private key
+* Paste JSON into `FIREBASE_SERVICE_ACCOUNT`
+* Wrap in single quotes
 
 ---
 
-## Why This Is Required
+## App Independence (Still True)
 
-* Firebase **client SDK** → used in the frontend
-* Firebase **Admin SDK** → used in the backend for:
+Even with auth included:
 
-  * Token verification
-  * Secure user management
-  * Server-side auth logic
+* Frontend and backend are **not tightly coupled**
+* They can be deployed independently
+* No shared packages are required
+* API communication is explicit
 
-The Admin SDK **cannot initialize** without a service account, and the app will crash immediately if it’s missing.
-
-## App Independence
-
-Even though this is a monorepo:
-
-- Frontend and backend **do not depend on each other**
-- They can be deployed independently
-- They can be developed in isolation
-- No API client or shared types are included by default
-
-If you want frontend ↔ backend communication, you must:
-
-- Configure CORS in the backend
-- Add environment variables in the frontend
-- Implement API calls manually
-
-This is intentional.
+Auth establishes **trust**, not architectural dependency.
 
 ---
 
 ## Turbo Configuration
 
-Turbo is configured via `turbo.json` and operates on **script names**, not commands.
+Turbo operates on **script names**, not commands.
 
-If an app does not define a script (e.g. `dev`, `build`, `lint`), Turbo will skip it.
+If an app doesn’t define `dev`, `build`, or `lint`, Turbo skips it.
 
 Turbo is used only for:
 
-- Task orchestration
-- Caching
-- Parallel execution
+* Task orchestration
+* Caching
+* Parallel execution
 
-It does not manage dependencies or enforce architecture.
+It does not enforce architecture.
 
 ---
 
 ## Shared Packages (Optional)
-
-If you want shared code (e.g. types, utilities):
 
 ```
 packages/
@@ -306,40 +356,6 @@ packages/
     └── package.json
 ```
 
-Shared packages are:
-
-- Explicit opt-in
-- Versioned like normal npm packages
-- Imported normally by frontend/backend
+Shared packages are opt-in, versioned, and imported like normal npm packages.
 
 Nothing is shared by default.
-
----
-
-## What This Template Intentionally Does NOT Include
-
-- Authentication
-- Database setup
-- API clients
-- Shared domain models
-- Docker or deployment configs
-- CI/CD pipelines
-
-Those decisions are left to the user.
-
----
-
-## Design Philosophy
-
-This template prioritizes:
-
-- Explicit boundaries
-- Minimal assumptions
-- Correct monorepo fundamentals
-- Ease of extension without lock-in
-
-It avoids:
-
-- Over-abstracted tooling
-- Implicit coupling
-- Opinionated infrastructure choices
