@@ -23,7 +23,7 @@ export default function useGoogleAuth(): UseGoogleAuthHook {
 	const googleSignInMutation = async () => {
 		const token = await handleGoogleSignIn();
 		await axios.post(
-			`${import.meta.env.VITE_BACKEND_BASE_URL}/api/auth/google/sign-in`,
+			`${import.meta.env.VITE_BACKEND_URL}/api/auth/google/sign-in`,
 			{},
 			{
 				headers: {
