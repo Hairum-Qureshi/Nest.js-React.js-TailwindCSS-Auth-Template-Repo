@@ -330,18 +330,3 @@ Turbo is used only for:
 * Parallel execution
 
 It does not enforce architecture.
-
----
-
-## Shared Packages (Optional)
-
-```
-packages/
-└── shared/
-    ├── src/
-    └── package.json
-```
-
-Shared packages are opt-in, versioned, and imported like normal npm packages.
-
-Nothing is shared by default.
