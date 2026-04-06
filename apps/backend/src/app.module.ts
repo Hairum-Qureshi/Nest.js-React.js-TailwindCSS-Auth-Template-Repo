@@ -10,8 +10,10 @@ import { MongooseModule } from '@nestjs/mongoose';
   imports: [
     AuthModule,
     FirebaseModule,
-    ConfigModule.forRoot(),
-    MongooseModule.forRoot(process.env.MONGO_URI!),
+    ConfigModule.forRoot({
+      isGlobal: true
+    }),
+    MongooseModule.forRoot(this.configService.get<string>(MONGO_URI)!),
   ],
   controllers: [AppController],
   providers: [AppService],
