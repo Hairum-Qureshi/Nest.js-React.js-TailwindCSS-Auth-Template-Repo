@@ -10,13 +10,14 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const configService = app.get(ConfigService);
 
   app.useGlobalPipes(new ValidationPipe());
 
   app.use(cookieParser());
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL,
+    origin: configService.get<string>('FRONTEND_URL'),
     credentials: true,
   });
 
@@ -24,7 +25,6 @@ async function bootstrap() {
     prefix: '/assets/',
   });
 
-  const configService = app.get(ConfigService);
   const PORT = configService.get<number>('PORT') ?? 3000;
   console.log(`Nest.js Server successfully started on port ${PORT}!`);
   
