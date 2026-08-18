@@ -2,7 +2,7 @@
 
 This repository is a **full-stack monorepo template** using **npm workspaces** and **Turborepo** to manage a React frontend and a NestJS backend in a single repository.
 
-It is based on a minimal monorepo foundation, with **Google authentication pre-wired using Firebase** so you don’t have to build auth plumbing from scratch.
+It is based on a minimal monorepo foundation, with **Google OAuth authentication pre-wired using Google Cloud OAuth credentials** so you don't have to build authentication plumbing from scratch.
 
 This is a **template**, not a production-ready system.
 
@@ -12,33 +12,35 @@ This is a **template**, not a production-ready system.
 
 This template provides:
 
-* A correct, minimal **monorepo setup**
-* Clear separation of frontend and backend concerns
-* Centralized dependency management
-* Coordinated development scripts
-* **Working Google OAuth (Firebase) across frontend and backend**
+- A correct, minimal **monorepo setup**
+- Clear separation of frontend and backend concerns
+- Centralized dependency management
+- Coordinated development scripts
+- **Google OAuth authentication across the frontend and backend**
+- JWT-based authentication for authenticated backend requests
 
 Authentication is included, but only to the extent required to:
 
-* Sign users in with Google on the frontend
-* Verify and trust those users on the backend
+- Sign users in with Google on the frontend
+- Send the Google authentication credential to the backend
+- Verify the Google identity on the backend
+- Establish an authenticated session using a backend-issued JWT
 
 Everything else remains intentionally unopinionated.
 
 ---
 
-## What This Template Is *Not*
+## What This Template Is _Not_
 
 This template does **not** try to be a full application starter.
 
 It does **not** include:
 
-* User roles or permissions
-* Auth-based authorization rules
-* Session persistence strategies
-* Database schemas or migrations
-* API clients or shared domain models
-* Deployment, Docker, or CI/CD
+- User roles or permissions
+- Auth-based authorization rules
+- API clients or shared domain models
+- Deployment, Docker, or CI/CD
+- Production session-management infrastructure
 
 Those decisions are left to the user.
 
@@ -46,11 +48,11 @@ Those decisions are left to the user.
 
 ## Repository Structure
 
-```
+```text
 .
 ├── apps/
-│   ├── backend/          # NestJS backend (Firebase Admin + JWT + Mongo)
-│   └── frontend/         # React + Vite + Tailwind (Firebase client)
+│   ├── backend/          # NestJS backend (Google OAuth + JWT + MongoDB)
+│   └── frontend/         # React + Vite + Tailwind (Google OAuth)
 ├── packages/             # Optional shared packages (empty by default)
 ├── package.json          # Root workspace + Turbo configuration
 ├── package-lock.json     # Single lockfile for the entire monorepo
@@ -60,11 +62,11 @@ Those decisions are left to the user.
 
 ### Key Structural Notes
 
-* This **is a monorepo**
-* Dependency management is centralized at the **root**
-* Each app remains a **standalone project**
-* No shared code is assumed
-* Shared packages are optional and explicit
+- This **is a monorepo**
+- Dependency management is centralized at the **root**
+- Each app remains a **standalone project**
+- No shared code is assumed
+- Shared packages are optional and explicit
 
 ---
 
@@ -72,24 +74,24 @@ Those decisions are left to the user.
 
 ### Backend (`apps/backend`)
 
-* NestJS
-* TypeScript
-* Firebase Admin SDK
-* JWT-based session tokens
-* MongoDB (wired, no schemas assumed)
+- NestJS
+- TypeScript
+- Google OAuth
+- JWT-based session tokens
+- MongoDB
 
 ### Frontend (`apps/frontend`)
 
-* React
-* Vite
-* TailwindCSS
-* TypeScript
-* Firebase Client SDK (Google sign-in)
+- React
+- Vite
+- TailwindCSS
+- TypeScript
+- Google OAuth
 
 ### Tooling
 
-* npm workspaces
-* Turborepo
+- npm workspaces
+- Turborepo
 
 ---
 
@@ -97,8 +99,10 @@ Those decisions are left to the user.
 
 You need:
 
-* Node.js (LTS recommended)
-* npm (v7+ for workspaces)
+- Node.js (LTS recommended)
+- npm (v7+ for workspaces)
+- A Google Cloud project
+- Google OAuth credentials
 
 ---
 
@@ -116,6 +120,157 @@ Do not run `npm install` inside individual apps.
 
 ---
 
+## Google OAuth Setup
+
+Google authentication uses **OAuth 2.0 credentials from Google Cloud Console**.
+
+Firebase is **not required** for authentication in this template.
+
+### 1. Create or Select a Google Cloud Project
+
+Open the [Google Cloud Console](https://console.cloud.google.com/) and create a new project or select an existing one.
+
+---
+
+### 2. Configure the OAuth Consent Screen
+
+In Google Cloud Console:
+
+1. Open **Google Auth Platform** / **OAuth consent screen**
+2. Configure the application information
+3. Select the appropriate audience for your application
+4. Add the scopes required by the application
+
+For basic Google sign-in, the application generally needs access to the user's basic profile and email information.
+
+If the application is in testing mode, make sure the Google accounts you intend to use are configured as test users.
+
+---
+
+### 3. Create OAuth Client Credentials
+
+In Google Cloud Console, go to:
+
+**Google Auth Platform → Clients**
+
+Create an **OAuth 2.0 Client ID**.
+
+For a browser-based React application, configure a **Web application** client.
+
+Add the frontend origin used during local development to the authorized JavaScript origins:
+
+```text
+http://localhost:5173
+```
+
+If your application is deployed later, add the appropriate production origin as well.
+
+> The exact Google Cloud Console navigation may change over time, but the credentials you need are an OAuth 2.0 **Client ID** and **Client Secret** for a web application.
+
+---
+
+### 4. Copy the OAuth Credentials
+
+After creating the OAuth client, Google provides:
+
+- **Client ID**
+- **Client Secret**
+
+The **Client ID** is used by both the frontend and backend.
+
+The **Client Secret is backend-only** and must never be exposed to the frontend.
+
+The frontend uses:
+
+```env
+VITE_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
+```
+
+The backend uses:
+
+```env
+GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
+GOOGLE_OAUTH_CLIENT_SECRET=your_google_oauth_client_secret_here
+```
+
+---
+
+## Environment Variables
+
+The repository includes example environment files for both applications:
+
+```text
+apps/
+├── backend/
+│   └── .env.example
+└── frontend/
+    └── .env.example
+```
+
+These files are the **source of truth for the environment variables required by each application**.
+
+Copy each example file to `.env` before starting the application.
+
+### Backend
+
+```bash
+cp apps/backend/.env.example apps/backend/.env
+```
+
+The backend example file contains configuration for:
+
+- JWT authentication
+- NestJS
+- MongoDB
+- Google OAuth
+- Frontend CORS configuration
+
+In particular, Google OAuth requires:
+
+```env
+GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
+GOOGLE_OAUTH_CLIENT_SECRET=your_google_oauth_client_secret_here
+```
+
+### Frontend
+
+```bash
+cp apps/frontend/.env.example apps/frontend/.env
+```
+
+The frontend example file contains the backend URL and Google OAuth client ID:
+
+```env
+VITE_BACKEND_URL=http://localhost:3000
+VITE_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
+```
+
+Because Vite exposes variables prefixed with `VITE_` to browser code, **never put the Google OAuth client secret in the frontend `.env` file**.
+
+---
+
+## MongoDB Setup
+
+The backend requires a MongoDB connection string through:
+
+```env
+MONGO_URI=mongodb_connection_string
+```
+
+This can be:
+
+- A local MongoDB instance:
+
+```text
+mongodb://localhost:27017/your-db-name
+```
+
+- Or a hosted MongoDB provider such as MongoDB Atlas.
+
+If `MONGO_URI` is missing or invalid, the backend will fail during startup.
+
+---
+
 ## Development
 
 Run all development servers concurrently:
@@ -126,208 +281,114 @@ npm run dev
 
 This uses Turbo to:
 
-* Start the NestJS backend
-* Start the Vite frontend
-* Stream logs with app prefixes
+- Start the NestJS backend
+- Start the Vite frontend
+- Stream logs with app prefixes
 
 ### Default Ports
 
-* Backend: `http://localhost:3000`
-* Frontend: `http://localhost:5173`
+- Backend: `http://localhost:3000`
+- Frontend: `http://localhost:5173`
 
----
-
-## Environment Variables & Firebase Setup
-
-This template **will not start** unless required environment variables are present and valid.
-
-Both frontend and backend rely on Firebase, but for **different purposes**:
-
-* Frontend → Firebase **client SDK**
-* Backend → Firebase **Admin SDK**
-
----
-
-## Common Startup Error (Firebase Admin)
-
-If the backend crashes with:
-
-```
-SyntaxError: "undefined" is not valid JSON
-    at JSON.parse (<anonymous>)
-    at firebase.module.ts
-```
-
-### What’s happening
-
-The backend expects a Firebase **service account JSON** via:
-
-```ts
-JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-```
-
-If the variable is missing, misnamed, or malformed, the process crashes immediately.
-
----
-
-### Fix
-
-You **must** provide a valid Firebase service account JSON via the
-`FIREBASE_SERVICE_ACCOUNT` environment variable, wrapped in **single quotes**.
-
----
-
-## Another Common Startup Error (MongoDB)
-
-You may also see an error similar to:
-
-```
-MongoParseError: URI must be provided
-```
-
-or:
-
-```
-MongooseError: The `uri` parameter to `openUri()` must be a string
-```
-
-### What this means
-
-This error simply means that **no MongoDB connection string was provided**.
-
-The backend expects a MongoDB URI via the `MONGO_URI` environment variable.
-If it’s missing, empty, or misspelled, Nest will fail during startup.
-
-This error is **not related to Firebase or Google Auth**.
-
----
-
-### Fix
-
-Make sure your backend `.env` file includes:
+Make sure the frontend URL matches the URL configured in:
 
 ```env
-MONGO_URI=mongodb_connection_string
-```
-
-This can be:
-
-* A local MongoDB instance
-
-  ```
-  mongodb://localhost:27017/your-db-name
-  ```
-
-* Or a hosted provider (e.g. MongoDB Atlas)
-
-Once `MONGO_URI` is defined, the backend should start normally.
-
-## Backend Environment Variables
-
-Create a `.env` file in `apps/backend`:
-
-```env
-JWT_SECRET=your_jwt_secret_here
-JWT_EXPIRES=604800000
-PORT=3000
-NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
-MONGO_URI=mongodb_connection_string
-FIREBASE_SERVICE_ACCOUNT='{ ... }'
 ```
 
-### Important Notes
+and the Google OAuth client's authorized JavaScript origins.
 
-* `JWT_EXPIRES` must be a **number**, not a string
-* `NODE_ENV` must be `development` for local dev
-* `FIREBASE_SERVICE_ACCOUNT` must:
+---
 
-  * Be valid JSON
-  * Be wrapped in **single quotes**
-  * Contain the **entire service account object**
+## Authentication Flow
 
-Example (truncated):
+The authentication flow is intentionally simple:
+
+```text
+┌─────────────┐
+│   Browser   │
+│ React/Vite  │
+└──────┬──────┘
+       │
+       │ 1. Sign in with Google
+       ▼
+┌─────────────────┐
+│  Google OAuth   │
+└────────┬────────┘
+         │
+         │ 2. Google credential
+         ▼
+┌─────────────────┐
+│ NestJS Backend  │
+│                 │
+│ Verify Google   │
+│ identity        │
+└────────┬────────┘
+         │
+         │ 3. Backend-issued JWT
+         ▼
+┌─────────────────┐
+│ Authenticated   │
+│ API requests    │
+└─────────────────┘
+```
+
+Google is responsible for authenticating the user.
+
+The backend is responsible for:
+
+- Verifying the Google authentication credential
+- Establishing trust in the authenticated Google account
+- Issuing the application's JWT
+- Authenticating subsequent API requests
+
+This keeps the frontend and backend independently deployable while still providing a clear authentication boundary.
+
+---
+
+## Security Notes
+
+### Never expose the Google OAuth Client Secret
+
+The following variable belongs **only on the backend**:
 
 ```env
-FIREBASE_SERVICE_ACCOUNT='{
-  "type": "service_account",
-  "project_id": "your-project-id",
-  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
-  "client_email": "firebase-adminsdk@your-project-id.iam.gserviceaccount.com"
-}'
+GOOGLE_OAUTH_CLIENT_SECRET=...
 ```
 
-⚠️ **Never commit this value.**
-It grants full admin access to your Firebase project.
+Do not prefix it with `VITE_` and do not put it in the frontend environment.
 
----
+### Do not commit `.env` files
 
-## Frontend Environment Variables
+The repository should contain the example files:
 
-Create a `.env` file in `apps/frontend`:
-
-```env
-VITE_BACKEND_BASE_URL=http://localhost:3000
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_BACKEND_URL=http://localhost:3000
+```text
+.env.example
 ```
 
-These values come from your **Firebase Web App configuration**, not the service account.
+but local secrets should live in:
+
+```text
+.env
+```
+
+Make sure your `.gitignore` excludes local environment files.
+
+### OAuth Client ID vs Client Secret
+
+The Google OAuth **Client ID is not considered a secret** and is expected to be used by the browser.
+
+The **Client Secret is confidential** and should only be available to the backend.
 
 ---
 
-## Firebase Project Setup (Required)
+## App Independence
 
-### 1. Create a Firebase Project
+Even with authentication included:
 
-* Firebase Console → Add project
+- Frontend and backend are **not tightly coupled**
+- They can be deployed independently
+- No shared packages are required
+- API communication is explicit
 
-### 2. Enable Google Authentication
-
-* Authentication → Sign-in method → Enable **Google**
-
-### 3. Create a Firebase Web App
-
-* Project Settings → Web app
-* Copy config into frontend `.env`
-
-### 4. Generate a Service Account (Backend)
-
-* Project Settings → Service accounts
-* Generate new private key
-* Paste JSON into `FIREBASE_SERVICE_ACCOUNT`
-* Wrap in single quotes
-
----
-
-## App Independence (Still True)
-
-Even with auth included:
-
-* Frontend and backend are **not tightly coupled**
-* They can be deployed independently
-* No shared packages are required
-* API communication is explicit
-
-Auth establishes **trust**, not architectural dependency.
-
----
-
-## Turbo Configuration
-
-Turbo operates on **script names**, not commands.
-
-If an app doesn’t define `dev`, `build`, or `lint`, Turbo skips it.
-
-Turbo is used only for:
-
-* Task orchestration
-* Caching
-* Parallel execution
-
-It does not enforce architecture.
+Authentication establishes **trust**, not architectural dependency.
