@@ -1,5 +1,5 @@
 interface UseGoogleAuthHook {
-	googleSignInMutation: () => Promise<void>;
+	googleSignInMutation: (credential: string) => Promise<void>;
 	signOut: () => Promise<void>;
 }
 
