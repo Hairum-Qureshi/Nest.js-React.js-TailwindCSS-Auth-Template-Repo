@@ -16,7 +16,7 @@ import express from 'express';
 import type { Response } from 'express';
 import { BearerToken } from 'src/decorators/bearerToken.decorator';
 
-@Controller('api/auth')
+@Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

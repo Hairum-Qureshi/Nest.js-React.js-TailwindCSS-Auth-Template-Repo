@@ -26,8 +26,9 @@ async function bootstrap() {
     prefix: '/assets/',
   });
 
+  app.setGlobalPrefix('api');
+
   const PORT = configService.get<number>('PORT') ?? 3000;
   console.log(`Nest.js Server successfully started on port ${PORT}!`);
-  
 }
 bootstrap();
