@@ -7,17 +7,21 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
+import { CurrentUser } from '../decorators/currentUser.decorator';
+import * as types from '../types';
 import express from 'express';
-import type { Response, CookieOptions } from 'express';
+import type { Response } from 'express';
 import { BearerToken } from 'src/decorators/bearerToken.decorator';
-import { CurrentUser } from 'src/decorators/currentUser.decorator';
-import * as types from 'src/types';
 
 @Controller('api/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('google/sign-in')
   @UsePipes(new ValidationPipe())
@@ -41,10 +45,7 @@ export class AuthController {
   signOut(@Res({ passthrough: true }) res: Response): {
     message: string;
   } {
-    res.clearCookie(
-      'auth-session',
-      this.authService.getAuthCookieOptions() as CookieOptions,
-    );
+    res.clearCookie('auth-session', this.authService.getAuthCookieOptions());
     return { message: 'success' };
   }
 
