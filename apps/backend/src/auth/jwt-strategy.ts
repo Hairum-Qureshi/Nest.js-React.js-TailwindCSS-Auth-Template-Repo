@@ -5,18 +5,20 @@ import { Model } from 'mongoose';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { User, UserDocument } from '../schemas/User';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
+    private configService: ConfigService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => req?.cookies?.['auth-session'],
       ]),
-      secretOrKey: process.env.JWT_SECRET!,
+      secretOrKey: configService.get<string>('JWT_SECRET') || '',
     });
   }
 
