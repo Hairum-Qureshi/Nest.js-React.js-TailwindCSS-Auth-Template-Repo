@@ -346,18 +346,6 @@ This keeps the frontend and backend independently deployable while still providi
 
 ---
 
-## Security Notes
-
-### Never expose the Google OAuth Client Secret
-
-The following variable belongs **only on the backend**:
-
-```env
-GOOGLE_OAUTH_CLIENT_SECRET=...
-```
-
-Do not prefix it with `VITE_` and do not put it in the frontend environment.
-
 ### Do not commit `.env` files
 
 The repository should contain the example files:
