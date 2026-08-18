@@ -1,43 +1,48 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { OAuth2Client } from 'google-auth-library';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import * as admin from 'firebase-admin';
-import { JwtService } from '@nestjs/jwt';
 import { User, UserDocument } from '../schemas/User';
-import { UserPayload } from 'src/types';
+import { JwtService } from '@nestjs/jwt';
+import { UserPayload } from '../types';
+import crypto from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
-    @Inject('FIREBASE_ADMIN') private firebase: admin.app.App,
+    @Inject('GoogleOAuthClient') private googleOAuthClient: OAuth2Client,
+    private configService: ConfigService,
   ) {}
 
   getAuthCookieOptions() {
     return {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
       sameSite: 'lax' as const,
     };
   }
 
   async googleAuth(token: string): Promise<{ jwtToken: string }> {
-    const payload = await this.firebase.auth().verifyIdToken(token);
-    const payloadUID: string = payload.uid;
-    const userRecord = await this.firebase.auth().getUser(payloadUID);
+    const ticket = await this.googleOAuthClient.verifyIdToken({
+      idToken: token,
+      audience: this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID'),
+    });
 
-    let user = await this.userModel.findOne({ email: userRecord.email });
+    const { email, picture, given_name, family_name } =
+      ticket.getPayload() || {};
+
+    let user = await this.userModel.findOne({ email });
 
     if (!user) {
       user = new this.userModel({
-        _id: payloadUID,
-        firstName: userRecord.displayName?.split(' ')[0] || 'GoogleUser',
-        lastName: userRecord.displayName
-          ? userRecord.displayName.split(' ').slice(1).join(' ')
-          : 'GoogleUser',
-        email: userRecord.email,
-        profilePicture: userRecord.photoURL,
+        _id: crypto.randomUUID(),
+        firstName: given_name || 'GoogleUser',
+        lastName: family_name || 'GoogleUser',
+        email,
+        profilePicture: picture,
       });
       await user.save();
     }
