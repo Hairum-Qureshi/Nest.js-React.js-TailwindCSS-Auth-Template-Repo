@@ -1,11 +1,7 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
-
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
-import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 
@@ -22,10 +18,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.useStaticAssets(join(__dirname, '..', 'assets'), {
-    prefix: '/assets/',
-  });
-
   app.setGlobalPrefix('api', {
     exclude: ['/'],
   });
@@ -33,7 +25,7 @@ async function bootstrap() {
   const PORT = configService.get<number>('PORT') ?? 3000;
 
   await app.listen(PORT);
-  
+
   console.log(`Nest.js Server successfully started on port ${PORT}!`);
 }
 bootstrap();
