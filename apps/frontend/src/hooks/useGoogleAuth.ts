@@ -9,7 +9,7 @@ export default function useGoogleAuth(): UseGoogleAuthHook {
 
   const googleSignInMutation = async (credential: string) => {
     await axios.post(
-      `${import.meta.env.VITE_BACKEND_BASE_URL}/api/auth/google/sign-in`,
+      `${import.meta.env.VITE_BACKEND_URL}/api/auth/google/sign-in`,
       {},
       {
         headers: {
@@ -26,7 +26,7 @@ export default function useGoogleAuth(): UseGoogleAuthHook {
 
   const signOut = async () => {
     await axios.post(
-      `${import.meta.env.VITE_BACKEND_BASE_URL}/api/auth/sign-out`,
+      `${import.meta.env.VITE_BACKEND_URL}/api/auth/sign-out`,
       {},
       {
         withCredentials: true,
