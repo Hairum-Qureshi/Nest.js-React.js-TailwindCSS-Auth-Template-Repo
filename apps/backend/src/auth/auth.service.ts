@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../schemas/User';
 import { JwtService } from '@nestjs/jwt';
-import { UserPayload } from '../types';
+import type { UserPayload } from '@repo/shared-types';
 import crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 

@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
 import { CurrentUser } from '../decorators/currentUser.decorator';
-import * as types from '../types';
+import type { UserPayload } from '@repo/shared-types';
 import express from 'express';
 import type { Response } from 'express';
 import { BearerToken } from 'src/decorators/bearerToken.decorator';
@@ -51,7 +51,7 @@ export class AuthController {
 
   @Get('current-user')
   @UseGuards(AuthGuard())
-  getCurrentUser(@CurrentUser() user: types.UserPayload): types.UserPayload {
+  getCurrentUser(@CurrentUser() user: UserPayload): UserPayload {
     return this.authService.getCurrentUser(user);
   }
 }
