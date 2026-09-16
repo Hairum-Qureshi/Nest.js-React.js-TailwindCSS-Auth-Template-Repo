@@ -17,9 +17,7 @@ This template provides:
 - Centralized dependency management
 - Coordinated development scripts
 - **Google OAuth authentication across the frontend and backend**
-- JWT-based authentication for authenticated backend requests
-
-Authentication is included, but only to the extent required to:
+- JWT-based authentication for authenticated backend requests- A shared `@repo/shared-types` package so the frontend and backend consume the same TypeScript types instead of duplicating them Authentication is included, but only to the extent required to:
 
 - Sign users in with Google on the frontend
 - Send the Google authentication credential to the backend
@@ -38,7 +36,7 @@ It does **not** include:
 
 - User roles or permissions
 - Auth-based authorization rules
-- API clients or shared domain models
+- API clients
 - Deployment, Docker, or CI/CD
 - Production session-management infrastructure
 
@@ -53,7 +51,11 @@ Those decisions are left to the user.
 ├── apps/
 │   ├── backend/          # NestJS backend (Google OAuth + JWT + MongoDB)
 │   └── frontend/         # React + Vite + Tailwind (Google OAuth)
-├── packages/             # Optional shared packages (empty by default)
+├── packages/
+│   └── shared-types/     # @repo/shared-types - types shared by the frontend and backend
+│       └── src/
+│           ├── types/    # Domain types (e.g. UserPayload, AuthRequest)
+│           └── hooks/    # Hook return/prop types (e.g. UseGoogleAuthHook)
 ├── package.json          # Root workspace + Turbo configuration
 ├── package-lock.json     # Single lockfile for the entire monorepo
 ├── turbo.json            # Turbo task pipeline
@@ -65,8 +67,8 @@ Those decisions are left to the user.
 - This **is a monorepo**
 - Dependency management is centralized at the **root**
 - Each app remains a **standalone project**
-- No shared code is assumed
-- Shared packages are optional and explicit
+- Shared TypeScript types live in `packages/shared-types` and are consumed via `@repo/shared-types` — apps do not define their own duplicate `types.ts`/`interfaces.ts` files
+- New shared types should be added under `packages/shared-types/src`, organized into subfolders by kind (e.g. `types/` for domain types, `hooks/` for hook return/prop types, `props/` for component prop types) and re-exported from `packages/shared-types/src/index.ts`
 
 ---
 
@@ -87,6 +89,10 @@ Those decisions are left to the user.
 - TailwindCSS
 - TypeScript
 - Google OAuth
+
+### Shared (`packages/shared-types`)
+
+- TypeScript types shared between the frontend and backend, consumed as `@repo/shared-types`
 
 ### Tooling
 
